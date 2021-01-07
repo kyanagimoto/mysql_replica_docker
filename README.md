@@ -2,17 +2,16 @@
 # up mysql
 
 ``` shell
-docker-compose up -d
+esdocker-compose up -d
 
-docker-compose exec mysql-replica mysql -e 'show slave status \G'
+docker exec mysql-slave sh -c "export MYSQL_PWD=password; mysql -u root app -e 'show slave status \G'"
 
+docker exec mysql-master sh -c "export MYSQL_PWD=password; mysql -u root app -e 'create table t (id int not null primary key)'"
+docker exec mysql-master sh -c "export MYSQL_PWD=password; mysql -u root app -e 'insert into t values (1)'"
 
-docker-compose exec mysql-primary mysql test -e 'create table t (id int not null primary key)'
-docker-compose exec mysql-primey mysql test -e 'insert into t values (1)'
+docker exec mysql-slave sh -c "export MYSQL_PWD=password; mysql -u root app -e 'show slave status \G'"
 
-docker-compose exec mysql-replica mysql -e 'show slave status \G'
-
-docker-compose exec mysql-replica mysql test -e 'select * from t'
+docker exec mysql-slave sh -c "export MYSQL_PWD=password; mysql -u root app -e 'select * from t'"
 ```
 
 # rails new
@@ -38,11 +37,5 @@ bundle exec rake db:migrate
 # show columns from users;
 
 be rails s
-
-docker-compose stop mysql-replica
-docker-compose restart mysql-replica
-
-docker-compose stop mysql-primary
-docker-compose start mysql-primary
 ```
 

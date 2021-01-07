@@ -1,42 +1,29 @@
-version: '3.7'
+version: "3"
 
 services:
-
   mysql-master:
-    image: mysql:8
-    command:
-      - --default_authentication_plugin=mysql_native_password
-      - --gtid_mode=ON
-      - --enforce_gtid_consistency=ON
-      - --relay-log=relay-bin
-      - --server_id=1
-    environment: &environment
-      TZ: Asia/Tokyo
-      MYSQL_ALLOW_EMPTY_PASSWORD: 1
-      MYSQL_DATABASE: test
-      MYSQL_USER: test
-      MYSQL_PASSWORD: pass
-      MYSQL_REPLICATION_USER: repl
-      MYSQL_REPLICATION_PASSWORD: pass
+    image: mysql:8.0
+    container_name: mysql-master
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: app
+    volumes:
+      - ./master/my.cnf:/etc/mysql/my.cnf
+      - ./master/data:/var/lib/mysql
+      - ./master/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 13306:3306
-    volumes:
-      - ./init.sh:/docker-entrypoint-initdb.d/init.sh:ro
 
   mysql-slave:
-    image: mysql:8
-    depends_on:
-      - mysql-master
-    command:
-      - --default_authentication_plugin=mysql_native_password
-      - --gtid_mode=ON
-      - --enforce_gtid_consistency=ON
-      - --relay-log=relay-bin
-      - --server_id=2
+    image: mysql:8.0
+    container_name: mysql-slave
     environment:
-      <<: *environment
-      MYSQL_REPLICATION_HOST: mysql-master
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: app
+    volumes:
+      - ./slave/my.cnf:/etc/mysql/my.cnf
+      - ./slave/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 23306:3306
-    volumes:
-      - ./init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    depends_on:
+      - mysql-master
