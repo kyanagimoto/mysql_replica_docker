@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
 
-  mysql-primary:
+  mysql-master:
     image: mysql:8
     command:
       - --default_authentication_plugin=mysql_native_password
@@ -10,7 +10,6 @@ services:
       - --enforce_gtid_consistency=ON
       - --relay-log=relay-bin
       - --server_id=1
-    hostname: mysql-primary
     environment: &environment
       TZ: Asia/Tokyo
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
@@ -19,18 +18,15 @@ services:
       MYSQL_PASSWORD: pass
       MYSQL_REPLICATION_USER: repl
       MYSQL_REPLICATION_PASSWORD: pass
-      TZ: "Asia/Tokyo"
-      BIND-ADDRESS: 0.0.0.0
     ports:
-      - 3306:3306
+      - 13306:3306
     volumes:
       - ./init.sh:/docker-entrypoint-initdb.d/init.sh:ro
 
-  mysql-replica:
+  mysql-slave:
     image: mysql:8
     depends_on:
-      - mysql-primary
-    hostname: mysql-replica
+      - mysql-master
     command:
       - --default_authentication_plugin=mysql_native_password
       - --gtid_mode=ON
@@ -39,8 +35,8 @@ services:
       - --server_id=2
     environment:
       <<: *environment
-      MYSQL_REPLICATION_HOST: mysql-primary
+      MYSQL_REPLICATION_HOST: mysql-master
+    ports:
+      - 23306:3306
     volumes:
       - ./init.sh:/docker-entrypoint-initdb.d/init.sh:ro
-    ports:
-      - 13306:3306
